@@ -1,0 +1,80 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Scraped data
+processed_urls.json
+*.backup
+
+# Output files
+output.csv
+scraped_data.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Service account keys (NEVER commit!)
+*.json
+!api/*.json
+github-actions-key.json
+service-account-key.json
+credentials.json
+gcp-key.json
+
+# Logs
+*.log
+logs/
+
+# Testing
+.tox/
+*.cover
+
+# Docker
+.dockerignore
+
+# GCP
+.gcloudignore
+
+# AI Assistant / Helper Files
+.claude/
+.cursor/
+.aider*
+.assistant/
+assistant.md
+claude_*.md
+cursor_*.md
+.ai/
+*.ai.md
+
+# Setup & Helper Documentation (keep only main docs in repo)
+SESSION_NOTES.md
+GITHUB_SETUP.md
+PUSH_TO_GITHUB.md
+REPOSITORY_README.md
+all_scraped_urls.txt
+found_urls.txt
