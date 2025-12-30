@@ -106,6 +106,17 @@ GET /api/v1/standings/{year}/{conference_name}    # Get standings by year and co
 ?conference=appalachian
 ```
 
+**Export/Download:**
+```bash
+GET /api/v1/export/csv                           # Download data as CSV
+
+# Query Parameters:
+?sport=wrestling          # Default: wrestling
+?division=naia           # Default: naia
+?gender=mens             # Default: mens
+?format=sorted           # Default: sorted (options: 'sorted' or 'main')
+```
+
 ### Example Requests
 
 **Get all wrestling schools:**
@@ -131,6 +142,16 @@ curl "https://api.athletehub.lanternbrp.com/api/v1/conferences/Appalachian/stand
 **Filter by conference:**
 ```bash
 curl "https://api.athletehub.lanternbrp.com/api/v1/schools?conference=heart%20of%20america"
+```
+
+**Download wrestling data as CSV:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/export/csv?sport=wrestling&division=naia&gender=mens&format=sorted" -o wrestling_naia_mens.csv
+```
+
+**Download in main format (school-based with year columns):**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/export/csv?sport=wrestling&division=naia&gender=mens&format=main" -o wrestling_schools.csv
 ```
 
 ### Response Format
@@ -163,6 +184,27 @@ To add data for a new sport, division, or gender:
 1. **Update CSV files** with new data, setting appropriate `Sport`, `Division`, `Gender` values
 2. **No code changes needed** - API automatically supports new values
 3. **Deploy** to Cloud Run (automatic via GitHub Actions)
+
+### Adding NCAA Data
+
+The API is architected to support NCAA Division I, II, and III data alongside NAIA data.
+
+**See: [NCAA_DATA_GUIDE.md](NCAA_DATA_GUIDE.md)** for complete instructions on:
+- Adding NCAA D1, D2, D3 wrestling standings
+- Data sources and scraping strategies
+- Conference-specific guidance (Big Ten, Big 12, ACC, etc.)
+- CSV format examples
+- API query examples for NCAA data
+
+**Quick Start - NCAA Division Codes:**
+- `ncaa-d1` - NCAA Division I
+- `ncaa-d2` - NCAA Division II
+- `ncaa-d3` - NCAA Division III
+
+**Example: Query NCAA D1 Big Ten Wrestling:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/standings/2024?sport=wrestling&division=ncaa-d1" | jq '.[] | select(.conference | contains("Big Ten"))'
+```
 
 ---
 

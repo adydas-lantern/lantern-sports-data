@@ -1,12 +1,14 @@
 """
-NAIA Wrestling Standings API
+Sports Standings API
 FastAPI application with OpenAPI/Swagger documentation
 """
 from fastapi import FastAPI, HTTPException, Query, Path
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from typing import List, Optional
 import os
+import io
+import csv
 from pathlib import Path as FilePath
 
 from api.models import (
@@ -27,9 +29,9 @@ API_VERSION = "1.0.0"
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="NAIA Athletics Data API",
+    title="Lantern BRP Athletics Data API",
     description="""
-    Multi-sport API for querying NAIA athletics conference standings and team data.
+    Multi-sport API for querying athletics conference standings and team data.
 
     ## Features
     * **Multi-Sport Support** - Wrestling (currently available), expandable to basketball, soccer, volleyball, etc.
@@ -124,7 +126,8 @@ async def root():
             "stats": "/api/v1/stats",
             "schools": "/api/v1/schools?sport=wrestling&division=naia&gender=mens",
             "conferences": "/api/v1/conferences?sport=wrestling",
-            "standings": "/api/v1/standings/{year}?sport=wrestling"
+            "standings": "/api/v1/standings/{year}?sport=wrestling",
+            "export_csv": "/api/v1/export/csv?sport=wrestling&division=naia&gender=mens&format=sorted"
         }
     }
 
@@ -411,6 +414,93 @@ async def get_stats(
         "years_covered": len(years_with_data),
         "years": years_with_data
     }
+
+
+@app.get(
+    "/api/v1/export/csv",
+    tags=["Export"],
+    summary="Export Data as CSV",
+    description="Download standings data as CSV file for the last 5 years (2020-2025)"
+)
+async def export_csv(
+    sport: str = Query("wrestling", description="Sport (wrestling, basketball, soccer, etc)"),
+    division: str = Query("naia", description="Division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: str = Query("mens", description="Gender (mens, womens, coed)"),
+    format: str = Query("sorted", description="CSV format: 'sorted' (by year/conference/place) or 'main' (by school with year columns)")
+):
+    """Export standings data as downloadable CSV file"""
+    if not data_loader.loaded:
+        raise HTTPException(status_code=503, detail="Data not loaded")
+
+    output = io.StringIO()
+
+    if format == "sorted":
+        # Sorted format: Sport, Division, Gender, Year, Conference, Place, School
+        writer = csv.writer(output)
+        writer.writerow(['Sport', 'Division', 'Gender', 'Year', 'Conference', 'Place', 'School'])
+
+        # Get all standings for last 5 years (2020-2025)
+        all_standings = []
+        for year in [2020, 2021, 2022, 2023, 2024, 2025]:
+            year_standings = data_loader.get_standings_by_year(year, sport=sport, division=division, gender=gender)
+            all_standings.extend(year_standings)
+
+        # Sort by year, conference, place
+        all_standings.sort(key=lambda s: (s.year, s.conference, s.place))
+
+        # Write data
+        for standing in all_standings:
+            writer.writerow([
+                standing.sport,
+                standing.division,
+                standing.gender,
+                standing.year,
+                standing.conference,
+                standing.place,
+                standing.school
+            ])
+
+    else:  # main format
+        # Main format: Sport, Division, Gender, School, Conference, 2020 Place, 2021 Place, ..., 2025 Place
+        writer = csv.writer(output)
+        writer.writerow([
+            'Sport', 'Division', 'Gender', 'School', 'Conference',
+            '2020 Conference Team Place', '2021 Conference Team Place',
+            '2022 Conference Team Place', '2023 Conference Team Place',
+            '2024 Conference Team Place', '2025 Conference Team Place'
+        ])
+
+        # Get all schools
+        schools = data_loader.get_all_schools(sport=sport, division=division, gender=gender)
+
+        # Write data
+        for school in schools:
+            # Create dict of year -> place
+            placements_by_year = {p.year: p.place for p in school.placements}
+
+            writer.writerow([
+                school.sport,
+                school.division,
+                school.gender,
+                school.name,
+                school.conference,
+                placements_by_year.get(2020, ''),
+                placements_by_year.get(2021, ''),
+                placements_by_year.get(2022, ''),
+                placements_by_year.get(2023, ''),
+                placements_by_year.get(2024, ''),
+                placements_by_year.get(2025, '')
+            ])
+
+    # Prepare response
+    output.seek(0)
+    filename = f"{sport}_{division}_{gender}_standings_2020-2025.csv"
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 
 # Exception handlers

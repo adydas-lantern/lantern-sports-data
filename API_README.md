@@ -1,12 +1,10 @@
-# NAIA Wrestling Standings API
+# Lanterbrp AthleteHub API
 
-REST API for querying NAIA wrestling conference standings data (2020-2025).
+REST API for sports data
 
 ## Features
 
 - ✅ **FastAPI** with automatic OpenAPI/Swagger documentation
-- ✅ **152 schools** across all NAIA conferences
-- ✅ **376 standing entries** from 2020-2025
 - ✅ RESTful endpoints for schools, conferences, and standings
 - ✅ Pagination support
 - ✅ Case-insensitive partial matching
@@ -15,15 +13,13 @@ REST API for querying NAIA wrestling conference standings data (2020-2025).
 
 ## Production Deployment
 
-**Service URL:** https://naia-wrestling-api-ez2te3dujq-uc.a.run.app
-
 ### Public Access
 
 The API is **publicly accessible** - no authentication required! 🎉
 
 **Quick test:**
 ```bash
-curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/health
+curl https://api.athletehub.lanternbrp.com/health
 ```
 
 **Example response:**
