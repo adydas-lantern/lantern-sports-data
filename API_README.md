@@ -17,48 +17,39 @@ REST API for querying NAIA wrestling conference standings data (2020-2025).
 
 **Service URL:** https://naia-wrestling-api-ez2te3dujq-uc.a.run.app
 
-### Authentication
+### Public Access
 
-The production API uses **IAM-based authentication**. To access the API:
+The API is **publicly accessible** - no authentication required! 🎉
 
-**Option 1: Using gcloud (authenticated users)**
+**Quick test:**
 ```bash
-# Get an identity token
-TOKEN=$(gcloud auth print-identity-token)
-
-# Make authenticated requests
-curl -H "Authorization: Bearer $TOKEN" \
-  https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/api/v1/stats
+curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/health
 ```
 
-**Option 2: Grant specific users access**
-```bash
-# Grant invoker role to a user
-gcloud run services add-iam-policy-binding naia-wrestling-api \
-  --region=us-central1 \
-  --member="user:email@example.com" \
-  --role="roles/run.invoker"
-```
-
-**Option 3: For public access (requires org policy changes)**
-```bash
-# Attempt to make public (may be blocked by organization policy)
-gcloud run services add-iam-policy-binding naia-wrestling-api \
-  --region=us-central1 \
-  --member="allUsers" \
-  --role="roles/run.invoker"
+**Example response:**
+```json
+{
+  "status": "healthy",
+  "version": "1.0.0",
+  "data_loaded": true,
+  "total_schools": 152,
+  "total_standings": 376
+}
 ```
 
 ### Available Endpoints
 
-- **API Info:** `GET /`
-- **Health Check:** `GET /health`
-- **Swagger UI:** `GET /docs`
-- **ReDoc:** `GET /redoc`
-- **Schools:** `GET /api/v1/schools`
-- **Conferences:** `GET /api/v1/conferences`
-- **Standings by Year:** `GET /api/v1/standings/{year}`
-- **Statistics:** `GET /api/v1/stats`
+| Endpoint | Description | Example |
+|----------|-------------|---------|
+| `GET /` | API information | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/` |
+| `GET /health` | Health check | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/health` |
+| `GET /docs` | Swagger UI | Open in browser: https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/docs |
+| `GET /redoc` | ReDoc docs | Open in browser: https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/redoc |
+| `GET /api/v1/schools` | List all schools | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/api/v1/schools?limit=5` |
+| `GET /api/v1/schools/{name}` | Get specific school | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/api/v1/schools/Augsburg` |
+| `GET /api/v1/conferences` | List conferences | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/api/v1/conferences` |
+| `GET /api/v1/standings/{year}` | Standings by year | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/api/v1/standings/2025` |
+| `GET /api/v1/stats` | Database statistics | `curl https://naia-wrestling-api-ez2te3dujq-uc.a.run.app/api/v1/stats` |
 
 ## Quick Start
 

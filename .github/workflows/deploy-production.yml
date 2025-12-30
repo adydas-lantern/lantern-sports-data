@@ -84,10 +84,7 @@ jobs:
       - name: Health Check
         run: |
           sleep 10
-          # Get identity token for authenticated requests
-          TOKEN=$(gcloud auth print-identity-token)
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer $TOKEN" \
             ${{ steps.service-url.outputs.url }}/health)
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "Health check failed with HTTP code: $HTTP_CODE"
@@ -98,20 +95,18 @@ jobs:
       - name: Smoke Tests
         run: |
           SERVICE_URL="${{ steps.service-url.outputs.url }}"
-          # Get identity token for authenticated requests
-          TOKEN=$(gcloud auth print-identity-token)
 
           # Test root endpoint
-          curl -f -H "Authorization: Bearer $TOKEN" "$SERVICE_URL/" || exit 1
+          curl -f "$SERVICE_URL/" || exit 1
 
           # Test health endpoint
-          curl -f -H "Authorization: Bearer $TOKEN" "$SERVICE_URL/health" || exit 1
+          curl -f "$SERVICE_URL/health" || exit 1
 
           # Test schools endpoint
-          curl -f -H "Authorization: Bearer $TOKEN" "$SERVICE_URL/api/v1/schools?limit=5" || exit 1
+          curl -f "$SERVICE_URL/api/v1/schools?limit=5" || exit 1
 
           # Test stats endpoint
-          curl -f -H "Authorization: Bearer $TOKEN" "$SERVICE_URL/api/v1/stats" || exit 1
+          curl -f "$SERVICE_URL/api/v1/stats" || exit 1
 
           echo "✓ All smoke tests passed"
 
