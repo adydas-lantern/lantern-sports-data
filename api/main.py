@@ -27,30 +27,45 @@ API_VERSION = "1.0.0"
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="NAIA Wrestling Standings API",
+    title="NAIA Athletics Data API",
     description="""
-    API for querying NAIA wrestling conference standings (2020-2025).
+    Multi-sport API for querying NAIA athletics conference standings and team data.
 
     ## Features
-    * Query schools and their placement history
-    * Get conference standings by year
-    * Search schools and conferences
-    * Paginated results
-    * Full OpenAPI/Swagger documentation
+    * **Multi-Sport Support** - Wrestling (currently available), expandable to basketball, soccer, volleyball, etc.
+    * **Multi-Division Support** - NAIA (currently available), expandable to NCAA D1/D2/D3
+    * **Query Filtering** - Filter by sport, division, gender, conference, year
+    * **School Data** - Query schools and their complete placement history
+    * **Conference Standings** - Get conference standings by year with detailed rankings
+    * **Paginated Results** - Efficient data retrieval with pagination support
+    * **Full OpenAPI/Swagger Documentation** - Interactive API explorer
 
-    ## Data Coverage
+    ## Current Data Coverage (Wrestling)
     * **152 schools** across all NAIA wrestling conferences
     * **376 standing entries** from 2020-2025
     * Complete tournament and poll data
+    * All data tagged as sport=wrestling, division=naia, gender=mens
+
+    ## Query Parameters
+    All endpoints support optional filtering:
+    * `sport` - Filter by sport (wrestling, basketball, etc.)
+    * `division` - Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)
+    * `gender` - Filter by gender (mens, womens, coed)
+    * `conference` - Filter by conference name (partial match)
+
+    ## Example Queries
+    * `/api/v1/schools?sport=wrestling&division=naia`
+    * `/api/v1/standings/2024?sport=wrestling&gender=mens`
+    * `/api/v1/conferences?division=naia`
     """,
     version=API_VERSION,
     contact={
-        "name": "NAIA Wrestling Data",
-        "url": "https://www.naia.org/sports/mwrest"
+        "name": "AthleteHub - Lantern Sports Data",
+        "url": "https://api.athletehub.lanternbrp.com"
     },
     license_info={
         "name": "Educational Use",
-        "url": "https://github.com/yourusername/naia-wrestling-api"
+        "url": "https://github.com/adydas-lantern/lantern-sports-data"
     }
 )
 
@@ -91,15 +106,25 @@ async def startup_event():
 async def root():
     """Get API information and available endpoints"""
     return {
-        "name": "NAIA Wrestling Standings API",
+        "name": "NAIA Athletics Data API",
         "version": API_VERSION,
+        "description": "Multi-sport API for NAIA athletics data",
+        "current_sports": ["wrestling"],
+        "supported_divisions": ["naia"],
+        "supported_genders": ["mens"],
+        "expandable_to": {
+            "sports": ["basketball", "soccer", "volleyball", "etc"],
+            "divisions": ["ncaa-d1", "ncaa-d2", "ncaa-d3"],
+            "genders": ["womens", "coed"]
+        },
         "docs": "/docs",
         "openapi": "/openapi.json",
         "endpoints": {
             "health": "/health",
-            "schools": "/api/v1/schools",
-            "conferences": "/api/v1/conferences",
-            "standings": "/api/v1/standings/{year}"
+            "stats": "/api/v1/stats",
+            "schools": "/api/v1/schools?sport=wrestling&division=naia&gender=mens",
+            "conferences": "/api/v1/conferences?sport=wrestling",
+            "standings": "/api/v1/standings/{year}?sport=wrestling"
         }
     }
 
