@@ -7,6 +7,9 @@ from pydantic import BaseModel, Field
 
 class SchoolPlacement(BaseModel):
     """Single year placement for a school"""
+    sport: str = Field(default="wrestling", description="Sport (wrestling, basketball, etc)")
+    division: str = Field(default="naia", description="Division (naia, ncaa-d1, ncaa-d2, ncaa-d3)")
+    gender: str = Field(default="mens", description="Gender (mens, womens, coed)")
     year: int = Field(..., description="Year of placement (2020-2025)")
     place: int = Field(..., description="Conference placement (1-10+)")
     conference: str = Field(..., description="Conference name")
@@ -15,7 +18,9 @@ class SchoolPlacement(BaseModel):
 class School(BaseModel):
     """School entity with all placements"""
     name: str = Field(..., description="School name")
-    division: str = Field(default="NAIA", description="College division")
+    sport: str = Field(default="wrestling", description="Sport (wrestling, basketball, etc)")
+    division: str = Field(default="naia", description="Division (naia, ncaa-d1, ncaa-d2, ncaa-d3)")
+    gender: str = Field(default="mens", description="Gender (mens, womens, coed)")
     conference: str = Field(..., description="Primary conference")
     placements: List[SchoolPlacement] = Field(default=[], description="All year placements")
 
@@ -23,11 +28,13 @@ class School(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "Grand View (Iowa) - Mens",
-                "division": "NAIA",
+                "sport": "wrestling",
+                "division": "naia",
+                "gender": "mens",
                 "conference": "Heart of America Athletic Conference",
                 "placements": [
-                    {"year": 2020, "place": 1, "conference": "Heart of America Athletic Conference"},
-                    {"year": 2021, "place": 1, "conference": "Heart of America Athletic Conference"}
+                    {"sport": "wrestling", "division": "naia", "gender": "mens", "year": 2020, "place": 1, "conference": "Heart of America Athletic Conference"},
+                    {"sport": "wrestling", "division": "naia", "gender": "mens", "year": 2021, "place": 1, "conference": "Heart of America Athletic Conference"}
                 ]
             }
         }
@@ -35,6 +42,9 @@ class School(BaseModel):
 
 class Standing(BaseModel):
     """Single standing entry"""
+    sport: str = Field(default="wrestling", description="Sport (wrestling, basketball, etc)")
+    division: str = Field(default="naia", description="Division (naia, ncaa-d1, ncaa-d2, ncaa-d3)")
+    gender: str = Field(default="mens", description="Gender (mens, womens, coed)")
     year: int = Field(..., description="Year")
     conference: str = Field(..., description="Conference name")
     place: int = Field(..., description="Placement")
@@ -43,6 +53,9 @@ class Standing(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "sport": "wrestling",
+                "division": "naia",
+                "gender": "mens",
                 "year": 2020,
                 "conference": "Heart of America Athletic Conference",
                 "place": 1,
@@ -54,6 +67,9 @@ class Standing(BaseModel):
 class Conference(BaseModel):
     """Conference entity"""
     name: str = Field(..., description="Conference name")
+    sport: str = Field(default="wrestling", description="Sport (wrestling, basketball, etc)")
+    division: str = Field(default="naia", description="Division (naia, ncaa-d1, ncaa-d2, ncaa-d3)")
+    gender: str = Field(default="mens", description="Gender (mens, womens, coed)")
     schools: List[str] = Field(default=[], description="Schools in conference")
     years_active: List[int] = Field(default=[], description="Years with data")
 
@@ -61,6 +77,9 @@ class Conference(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "Heart of America Athletic Conference",
+                "sport": "wrestling",
+                "division": "naia",
+                "gender": "mens",
                 "schools": ["Grand View (Iowa) - Mens", "Missouri Valley College"],
                 "years_active": [2020, 2021, 2022, 2023, 2024, 2025]
             }
@@ -69,6 +88,9 @@ class Conference(BaseModel):
 
 class ConferenceStandings(BaseModel):
     """Conference standings for a specific year"""
+    sport: str = Field(default="wrestling", description="Sport (wrestling, basketball, etc)")
+    division: str = Field(default="naia", description="Division (naia, ncaa-d1, ncaa-d2, ncaa-d3)")
+    gender: str = Field(default="mens", description="Gender (mens, womens, coed)")
     year: int = Field(..., description="Year")
     conference: str = Field(..., description="Conference name")
     standings: List[Standing] = Field(..., description="Ordered standings")
@@ -76,11 +98,14 @@ class ConferenceStandings(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "sport": "wrestling",
+                "division": "naia",
+                "gender": "mens",
                 "year": 2020,
                 "conference": "Heart of America Athletic Conference",
                 "standings": [
-                    {"year": 2020, "conference": "Heart of America Athletic Conference", "place": 1, "school": "Grand View (Iowa) - Mens"},
-                    {"year": 2020, "conference": "Heart of America Athletic Conference", "place": 2, "school": "Missouri Valley College"}
+                    {"sport": "wrestling", "division": "naia", "gender": "mens", "year": 2020, "conference": "Heart of America Athletic Conference", "place": 1, "school": "Grand View (Iowa) - Mens"},
+                    {"sport": "wrestling", "division": "naia", "gender": "mens", "year": 2020, "conference": "Heart of America Athletic Conference", "place": 2, "school": "Missouri Valley College"}
                 ]
             }
         }

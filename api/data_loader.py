@@ -33,6 +33,9 @@ class DataLoader:
 
             self.standings_data = [
                 Standing(
+                    sport=row.get('Sport', 'wrestling'),
+                    division=row.get('Division', 'naia'),
+                    gender=row.get('Gender', 'mens'),
                     year=int(row['Year']),
                     conference=row['Conference'],
                     place=int(row['Place']),
@@ -52,33 +55,50 @@ class DataLoader:
 
     def _build_conferences_cache(self):
         """Build cache of conferences from standings data"""
-        conf_schools: Dict[str, set] = {}
-        conf_years: Dict[str, set] = {}
+        # Key: (conference_name, sport, division, gender)
+        conf_data: Dict[tuple, Dict] = {}
 
         for standing in self.standings_data:
-            conf_name = standing.conference
+            key = (standing.conference, standing.sport, standing.division, standing.gender)
 
-            if conf_name not in conf_schools:
-                conf_schools[conf_name] = set()
-                conf_years[conf_name] = set()
+            if key not in conf_data:
+                conf_data[key] = {
+                    'schools': set(),
+                    'years': set()
+                }
 
-            conf_schools[conf_name].add(standing.school)
-            conf_years[conf_name].add(standing.year)
+            conf_data[key]['schools'].add(standing.school)
+            conf_data[key]['years'].add(standing.year)
 
         self.conferences_cache = {
-            name: Conference(
+            f"{name}|{sport}|{division}|{gender}": Conference(
                 name=name,
-                schools=sorted(list(schools)),
-                years_active=sorted(list(conf_years[name]))
+                sport=sport,
+                division=division,
+                gender=gender,
+                schools=sorted(list(data['schools'])),
+                years_active=sorted(list(data['years']))
             )
-            for name, schools in conf_schools.items()
+            for (name, sport, division, gender), data in conf_data.items()
         }
 
-    def get_all_schools(self) -> List[School]:
-        """Get all schools with their placements"""
+    def get_all_schools(self, sport: Optional[str] = None, division: Optional[str] = None, gender: Optional[str] = None) -> List[School]:
+        """Get all schools with their placements, optionally filtered by sport/division/gender"""
         schools = []
 
         for row in self.schools_data:
+            # Filter by sport/division/gender if specified
+            row_sport = row.get('Sport', 'wrestling')
+            row_division = row.get('Division', 'naia')
+            row_gender = row.get('Gender', 'mens')
+
+            if sport and row_sport != sport:
+                continue
+            if division and row_division != division:
+                continue
+            if gender and row_gender != gender:
+                continue
+
             school_name = row['School']
             conference = row['Region']
 
@@ -88,6 +108,9 @@ class DataLoader:
                 place_str = row.get(f'{year} Conference Team Place', '').strip()
                 if place_str:
                     placements.append(SchoolPlacement(
+                        sport=row_sport,
+                        division=row_division,
+                        gender=row_gender,
                         year=year,
                         place=int(place_str),
                         conference=conference
@@ -95,20 +118,34 @@ class DataLoader:
 
             schools.append(School(
                 name=school_name,
-                division=row['College Division'],
+                sport=row_sport,
+                division=row_division,
+                gender=row_gender,
                 conference=conference,
                 placements=placements
             ))
 
         return schools
 
-    def get_school_by_name(self, name: str) -> Optional[School]:
+    def get_school_by_name(self, name: str, sport: Optional[str] = None, division: Optional[str] = None, gender: Optional[str] = None) -> Optional[School]:
         """Get a specific school by name (case-insensitive partial match)"""
         name_lower = name.lower()
 
         for row in self.schools_data:
             school_name = row['School']
             if name_lower in school_name.lower() or school_name.lower() in name_lower:
+                row_sport = row.get('Sport', 'wrestling')
+                row_division = row.get('Division', 'naia')
+                row_gender = row.get('Gender', 'mens')
+
+                # Filter if specified
+                if sport and row_sport != sport:
+                    continue
+                if division and row_division != division:
+                    continue
+                if gender and row_gender != gender:
+                    continue
+
                 conference = row['Region']
 
                 # Get all placements for this school
@@ -117,6 +154,9 @@ class DataLoader:
                     place_str = row.get(f'{year} Conference Team Place', '').strip()
                     if place_str:
                         placements.append(SchoolPlacement(
+                            sport=row_sport,
+                            division=row_division,
+                            gender=row_gender,
                             year=year,
                             place=int(place_str),
                             conference=conference
@@ -124,16 +164,27 @@ class DataLoader:
 
                 return School(
                     name=school_name,
-                    division=row['College Division'],
+                    sport=row_sport,
+                    division=row_division,
+                    gender=row_gender,
                     conference=conference,
                     placements=placements
                 )
 
         return None
 
-    def get_all_conferences(self) -> List[Conference]:
-        """Get all conferences"""
-        return list(self.conferences_cache.values())
+    def get_all_conferences(self, sport: Optional[str] = None, division: Optional[str] = None, gender: Optional[str] = None) -> List[Conference]:
+        """Get all conferences, optionally filtered by sport/division/gender"""
+        conferences = []
+        for conf in self.conferences_cache.values():
+            if sport and conf.sport != sport:
+                continue
+            if division and conf.division != division:
+                continue
+            if gender and conf.gender != gender:
+                continue
+            conferences.append(conf)
+        return conferences
 
     def get_conference_by_name(self, name: str) -> Optional[Conference]:
         """Get a specific conference by name (case-insensitive partial match)"""
@@ -145,31 +196,56 @@ class DataLoader:
 
         return None
 
-    def get_standings_by_year(self, year: int) -> List[Standing]:
-        """Get all standings for a specific year"""
-        return [s for s in self.standings_data if s.year == year]
+    def get_standings_by_year(self, year: int, sport: Optional[str] = None, division: Optional[str] = None, gender: Optional[str] = None) -> List[Standing]:
+        """Get all standings for a specific year, optionally filtered"""
+        standings = []
+        for s in self.standings_data:
+            if s.year != year:
+                continue
+            if sport and s.sport != sport:
+                continue
+            if division and s.division != division:
+                continue
+            if gender and s.gender != gender:
+                continue
+            standings.append(s)
+        return standings
 
     def get_standings_by_year_and_conference(
         self,
         year: int,
-        conference: str
+        conference: str,
+        sport: Optional[str] = None,
+        division: Optional[str] = None,
+        gender: Optional[str] = None
     ) -> Optional[ConferenceStandings]:
         """Get standings for a specific year and conference"""
         conf_lower = conference.lower()
 
         # Find matching conference name
-        matching_conf = None
+        matching_standing = None
         for standing in self.standings_data:
             if conf_lower in standing.conference.lower():
-                matching_conf = standing.conference
+                # Check filters
+                if sport and standing.sport != sport:
+                    continue
+                if division and standing.division != division:
+                    continue
+                if gender and standing.gender != gender:
+                    continue
+                matching_standing = standing
                 break
 
-        if not matching_conf:
+        if not matching_standing:
             return None
 
         standings = [
             s for s in self.standings_data
-            if s.year == year and s.conference == matching_conf
+            if s.year == year
+            and s.conference == matching_standing.conference
+            and s.sport == matching_standing.sport
+            and s.division == matching_standing.division
+            and s.gender == matching_standing.gender
         ]
 
         if not standings:
@@ -179,8 +255,11 @@ class DataLoader:
         standings.sort(key=lambda x: x.place)
 
         return ConferenceStandings(
+            sport=matching_standing.sport,
+            division=matching_standing.division,
+            gender=matching_standing.gender,
             year=year,
-            conference=matching_conf,
+            conference=matching_standing.conference,
             standings=standings
         )
 

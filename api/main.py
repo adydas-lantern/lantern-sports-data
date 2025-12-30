@@ -133,13 +133,16 @@ async def health_check():
 async def get_schools(
     skip: int = Query(0, ge=0, description="Number of schools to skip"),
     limit: int = Query(100, ge=1, le=500, description="Maximum schools to return"),
-    conference: Optional[str] = Query(None, description="Filter by conference name")
+    conference: Optional[str] = Query(None, description="Filter by conference name"),
+    sport: Optional[str] = Query(None, description="Filter by sport (wrestling, basketball, etc)"),
+    division: Optional[str] = Query(None, description="Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: Optional[str] = Query(None, description="Filter by gender (mens, womens, coed)")
 ):
     """Get all schools with optional pagination and filtering"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
-    schools = data_loader.get_all_schools()
+    schools = data_loader.get_all_schools(sport=sport, division=division, gender=gender)
 
     # Filter by conference if specified
     if conference:
@@ -162,13 +165,16 @@ async def get_schools(
     responses={404: {"model": ErrorResponse}}
 )
 async def get_school(
-    school_name: str = Path(..., description="School name (case-insensitive partial match)")
+    school_name: str = Path(..., description="School name (case-insensitive partial match)"),
+    sport: Optional[str] = Query(None, description="Filter by sport"),
+    division: Optional[str] = Query(None, description="Filter by division"),
+    gender: Optional[str] = Query(None, description="Filter by gender")
 ):
     """Get a specific school by name"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
-    school = data_loader.get_school_by_name(school_name)
+    school = data_loader.get_school_by_name(school_name, sport=sport, division=division, gender=gender)
 
     if not school:
         raise HTTPException(
@@ -186,12 +192,16 @@ async def get_school(
     summary="List All Conferences",
     description="Get a list of all conferences with their schools and active years"
 )
-async def get_conferences():
-    """Get all conferences"""
+async def get_conferences(
+    sport: Optional[str] = Query(None, description="Filter by sport (wrestling, basketball, etc)"),
+    division: Optional[str] = Query(None, description="Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: Optional[str] = Query(None, description="Filter by gender (mens, womens, coed)")
+):
+    """Get all conferences with optional filtering"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
-    return data_loader.get_all_conferences()
+    return data_loader.get_all_conferences(sport=sport, division=division, gender=gender)
 
 
 @app.get(
@@ -203,9 +213,12 @@ async def get_conferences():
     responses={404: {"model": ErrorResponse}}
 )
 async def get_conference(
-    conference_name: str = Path(..., description="Conference name (case-insensitive partial match)")
+    conference_name: str = Path(..., description="Conference name (case-insensitive partial match)"),
+    sport: Optional[str] = Query(None, description="Filter by sport (wrestling, basketball, etc)"),
+    division: Optional[str] = Query(None, description="Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: Optional[str] = Query(None, description="Filter by gender (mens, womens, coed)")
 ):
-    """Get a specific conference by name"""
+    """Get a specific conference by name with optional filtering"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
@@ -216,6 +229,14 @@ async def get_conference(
             status_code=404,
             detail=f"Conference not found: {conference_name}"
         )
+
+    # Apply filters if specified
+    if sport and conference.sport != sport:
+        raise HTTPException(status_code=404, detail=f"Conference not found with sport={sport}")
+    if division and conference.division != division:
+        raise HTTPException(status_code=404, detail=f"Conference not found with division={division}")
+    if gender and conference.gender != gender:
+        raise HTTPException(status_code=404, detail=f"Conference not found with gender={gender}")
 
     return conference
 
@@ -229,9 +250,12 @@ async def get_conference(
     responses={404: {"model": ErrorResponse}}
 )
 async def get_conference_standings(
-    conference_name: str = Path(..., description="Conference name (case-insensitive partial match)")
+    conference_name: str = Path(..., description="Conference name (case-insensitive partial match)"),
+    sport: Optional[str] = Query(None, description="Filter by sport (wrestling, basketball, etc)"),
+    division: Optional[str] = Query(None, description="Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: Optional[str] = Query(None, description="Filter by gender (mens, womens, coed)")
 ):
-    """Get all standings for a conference"""
+    """Get all standings for a conference with optional filtering"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
@@ -242,6 +266,20 @@ async def get_conference_standings(
             status_code=404,
             detail=f"Conference not found: {conference_name}"
         )
+
+    # Filter standings if sport/division/gender specified
+    if sport or division or gender:
+        filtered_standings = {}
+        for year, year_standings in standings.items():
+            filtered = [
+                s for s in year_standings
+                if (not sport or s.sport == sport)
+                and (not division or s.division == division)
+                and (not gender or s.gender == gender)
+            ]
+            if filtered:
+                filtered_standings[year] = filtered
+        standings = filtered_standings
 
     return {
         "conference": conference_name,
@@ -258,13 +296,16 @@ async def get_conference_standings(
 )
 async def get_standings_by_year(
     year: int = Path(..., ge=2020, le=2025, description="Year (2020-2025)"),
-    conference: Optional[str] = Query(None, description="Filter by conference name")
+    conference: Optional[str] = Query(None, description="Filter by conference name"),
+    sport: Optional[str] = Query(None, description="Filter by sport (wrestling, basketball, etc)"),
+    division: Optional[str] = Query(None, description="Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: Optional[str] = Query(None, description="Filter by gender (mens, womens, coed)")
 ):
-    """Get all standings for a specific year"""
+    """Get all standings for a specific year with optional filtering"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
-    standings = data_loader.get_standings_by_year(year)
+    standings = data_loader.get_standings_by_year(year, sport=sport, division=division, gender=gender)
 
     # Filter by conference if specified
     if conference:
@@ -290,13 +331,18 @@ async def get_standings_by_year(
 )
 async def get_standings_by_year_and_conference(
     year: int = Path(..., ge=2020, le=2025, description="Year (2020-2025)"),
-    conference_name: str = Path(..., description="Conference name (case-insensitive partial match)")
+    conference_name: str = Path(..., description="Conference name (case-insensitive partial match)"),
+    sport: Optional[str] = Query(None, description="Filter by sport (wrestling, basketball, etc)"),
+    division: Optional[str] = Query(None, description="Filter by division (naia, ncaa-d1, ncaa-d2, ncaa-d3)"),
+    gender: Optional[str] = Query(None, description="Filter by gender (mens, womens, coed)")
 ):
-    """Get standings for a specific year and conference"""
+    """Get standings for a specific year and conference with optional filtering"""
     if not data_loader.loaded:
         raise HTTPException(status_code=503, detail="Data not loaded")
 
-    standings = data_loader.get_standings_by_year_and_conference(year, conference_name)
+    standings = data_loader.get_standings_by_year_and_conference(
+        year, conference_name, sport=sport, division=division, gender=gender
+    )
 
     if not standings:
         raise HTTPException(

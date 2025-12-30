@@ -1,6 +1,14 @@
-# NAIA Wrestling Standings Scraper
+# NAIA Athletics Data API & Scraper
 
-Python application for scraping NAIA wrestling conference standings from 2020-2025.
+Python application for scraping and serving NAIA athletics conference standings data via REST API.
+
+## 🚀 Live API
+
+**Base URL**: `https://api.athletehub.lanternbrp.com`
+
+**Documentation**: `https://api.athletehub.lanternbrp.com/docs` (Interactive Swagger UI)
+
+The API provides REST endpoints for querying NAIA athletics data across multiple sports, divisions, and genders.
 
 ## 🎯 Current Status (Last Updated: 2025-12-30)
 
@@ -29,6 +37,132 @@ Python application for scraping NAIA wrestling conference standings from 2020-20
 - **24 schools** with complete 6-year data
 - **47 schools** with 5+ years of data
 - **61 schools** with 4+ years of data
+
+---
+
+## 🌐 API Usage
+
+### Multi-Sport Support
+
+The API is designed to support multiple sports, divisions, and genders:
+
+**Sports:**
+- `wrestling` (currently available)
+- `basketball`, `soccer`, `volleyball`, etc. (expandable)
+
+**Divisions:**
+- `naia` (currently available)
+- `ncaa-d1`, `ncaa-d2`, `ncaa-d3` (expandable)
+
+**Genders:**
+- `mens` (currently available)
+- `womens`, `coed` (expandable)
+
+All current data is tagged as `wrestling/naia/mens` with full backward compatibility.
+
+### API Endpoints
+
+**Health & Info:**
+```bash
+GET /                    # API information
+GET /health             # Health check
+GET /api/v1/stats       # Database statistics
+```
+
+**Schools:**
+```bash
+GET /api/v1/schools                     # List all schools
+GET /api/v1/schools/{school_name}       # Get specific school
+
+# Query Parameters:
+?sport=wrestling
+?division=naia
+?gender=mens
+?conference=appalachian
+?skip=0&limit=100
+```
+
+**Conferences:**
+```bash
+GET /api/v1/conferences                           # List all conferences
+GET /api/v1/conferences/{conference_name}         # Get specific conference
+GET /api/v1/conferences/{conference_name}/standings # Get all standings
+
+# Query Parameters:
+?sport=wrestling
+?division=naia
+?gender=mens
+```
+
+**Standings:**
+```bash
+GET /api/v1/standings/{year}                      # Get standings by year
+GET /api/v1/standings/{year}/{conference_name}    # Get standings by year and conference
+
+# Query Parameters:
+?sport=wrestling
+?division=naia
+?gender=mens
+?conference=appalachian
+```
+
+### Example Requests
+
+**Get all wrestling schools:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/schools?sport=wrestling&division=naia&gender=mens"
+```
+
+**Get a specific school:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/schools/Grand%20View"
+```
+
+**Get 2024 standings:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/standings/2024?sport=wrestling"
+```
+
+**Get conference standings:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/conferences/Appalachian/standings"
+```
+
+**Filter by conference:**
+```bash
+curl "https://api.athletehub.lanternbrp.com/api/v1/schools?conference=heart%20of%20america"
+```
+
+### Response Format
+
+All responses are JSON. Example school response:
+```json
+{
+  "name": "Grand View (Iowa) - Mens",
+  "sport": "wrestling",
+  "division": "naia",
+  "gender": "mens",
+  "conference": "Heart of America Conference",
+  "placements": [
+    {
+      "sport": "wrestling",
+      "division": "naia",
+      "gender": "mens",
+      "year": 2024,
+      "place": 1,
+      "conference": "Heart of America Conference"
+    }
+  ]
+}
+```
+
+### Adding New Sports/Divisions
+
+To add data for a new sport, division, or gender:
+
+1. **Update CSV files** with new data, setting appropriate `Sport`, `Division`, `Gender` values
+2. **No code changes needed** - API automatically supports new values
+3. **Deploy** to Cloud Run (automatic via GitHub Actions)
 
 ---
 
@@ -213,19 +347,31 @@ with open('processed_urls.json') as f:
 
 ## CSV Structure
 
-`NAIA_blank - NAIA_results.csv`:
+### `NAIA_blank - NAIA_results.csv`
+
+**Multi-Sport Support** (Updated 2025-12-30):
 
 | Column | Field | Example |
 |--------|-------|---------|
-| A | College Division | NAIA |
-| B | School | Central Baptist College - Mens |
-| C | Region/Conference | American Midwest Conference/Sooner Athletic Conference |
-| D | 2020 Conference Team Place | 1 |
-| E | 2021 Conference Team Place | 2 |
-| F | 2022 Conference Team Place | 1 |
-| G | 2023 Conference Team Place | 3 |
-| H | 2024 Conference Team Place | 2 |
-| I | 2025 Conference Team Place | 4 |
+| A | Sport | wrestling |
+| B | Division | naia |
+| C | Gender | mens |
+| D | College Division | NAIA *(legacy field)* |
+| E | School | Central Baptist College - Mens |
+| F | Region/Conference | American Midwest Conference/Sooner Athletic Conference |
+| G | 2020 Conference Team Place | 1 |
+| H | 2021 Conference Team Place | 2 |
+| I | 2022 Conference Team Place | 1 |
+| J | 2023 Conference Team Place | 3 |
+| K | 2024 Conference Team Place | 2 |
+| L | 2025 Conference Team Place | 4 |
+
+**New Columns (A-C):**
+- `Sport`: Sport type (wrestling, basketball, etc.)
+- `Division`: Athletic division (naia, ncaa-d1, ncaa-d2, ncaa-d3)
+- `Gender`: Team gender (mens, womens, coed)
+
+All existing data is tagged as `wrestling/naia/mens` for full backward compatibility.
 
 **Normalized Conference Names:**
 - `American Midwest Conference/Sooner Athletic Conference` (standardized order, no spaces around /)
@@ -233,14 +379,23 @@ with open('processed_urls.json') as f:
 - `Kansas Collegiate Athletic Conference` (full name)
 - All conference names normalized for consistency across years
 
-`NAIA_Complete_Sorted.csv`:
+### `NAIA_Complete_Sorted.csv`
+
+**Multi-Sport Support** (Updated 2025-12-30):
 
 | Column | Field | Example |
 |--------|-------|---------|
-| A | Year | 2020 |
-| B | Conference | American Midwest Conference/Sooner Athletic Conference |
-| C | Place | 1 |
-| D | School | Williams Baptist (Ark.) - Mens |
+| A | Sport | wrestling |
+| B | Division | naia |
+| C | Gender | mens |
+| D | Year | 2020 |
+| E | Conference | American Midwest Conference/Sooner Athletic Conference |
+| F | Place | 1 |
+| G | School | Williams Baptist (Ark.) - Mens |
+
+**New Columns (A-C):**
+- Same Sport/Division/Gender fields as main CSV
+- Enables multi-sport data storage and API filtering
 
 ---
 
@@ -274,6 +429,51 @@ with open('processed_urls.json') as f:
 - Application entry point
 - User prompts and workflow
 - CSV integration
+
+### API Modules
+
+**`api/main.py`**
+- FastAPI application with OpenAPI/Swagger documentation
+- REST API endpoints for schools, conferences, standings
+- Multi-sport query parameter filtering
+- CORS middleware and error handling
+- Automatic deployment via GitHub Actions
+
+**`api/data_loader.py`**
+- CSV data loading and caching
+- Sport/division/gender filtering logic
+- School and conference lookups
+- Standings aggregation by year/conference
+
+**`api/models.py`**
+- Pydantic data models for request/response validation
+- School, Standing, Conference, SchoolPlacement models
+- Multi-sport support with default values
+- OpenAPI schema generation
+
+**`api/requirements.txt`**
+- FastAPI, Uvicorn, Pydantic dependencies
+- Separate from scraper dependencies
+
+### Deployment
+
+**Google Cloud Run:**
+- Containerized deployment using Docker
+- Automatic builds via GitHub Actions
+- Custom domain: `api.athletehub.lanternbrp.com`
+- SSL certificate auto-provisioning
+- Workload Identity Federation for keyless auth
+
+**Dockerfile:**
+- Python 3.12 base image
+- Multi-stage build for optimal size
+- Runs on port 8080
+
+**GitHub Actions:**
+- Automated CI/CD pipeline
+- Builds and deploys on push to main
+- Uses Google Cloud Workload Identity
+- No service account keys required
 
 ---
 
